@@ -27,26 +27,17 @@ Próximos pasos:
 - **Build**: Maven
 - **Testing**: Spring Boot Test + Spring Security Test
 
-## Referencia completa:
-* [docs/README.md](docs/README.md) (OpenApi Generator)
-
 ## <sub>Business rules</sub><br>Reglas de negocio
 
 #### Tipos de usuarios y su función principal
 * **Administrador**: `Registra usuarios y asigna roles`
 * **Coordinador**: `Registra cursos y matricula usuarios`
-* **Moderador**: `Suspende usuarios y edita/elimina mensajes`
-* **Profesores y estudiantes**: `Crean hilos y respuestas`
+* **Moderador***: `Suspende usuarios y edita/elimina mensajes`
+* **Profesores y estudiantes***: `Crean hilos y respuestas`
 
 `Usuarios no autenticados puede consultar la lista de cursos y cursos por id.`
 
-Usuarios enrolables:
-_(Usuarios susceptibles de ser matriculados a un curso con efecto sobre el alcance de sus permisos para determinadas operaciones)_
-
-* Moderador
-* Profesor
-* Estudiante
-
+(*): _Usuarios susceptibles de ser matriculados a un curso con efecto sobre el alcance de sus permisos para determinadas operaciones_
 
 #### Login
 
@@ -92,6 +83,29 @@ autenticación.
 
 ```
 
+## Notas sobre la estructura de profundidad en las respuestas
+
+Las respuestas (replies) pueden organizarse jerárquicamente hasta un máximo de tres niveles, comenzando por aquellas que responden directamente al tópico (topic):
+
+- Nivel 1: Respuesta al tópico (sin respuesta padre)
+- Nivel 2: Respuesta a otra respuesta
+- Nivel 3: Respuesta anidada de segundo nivel
+
+Intentar exceder este límite resultará en un error con el código: `DEPTH_EXCEEDED_400`.
+
+## Notas sobre permisos especiales de los endpoints
+
+`GET /users/{userId}`
+- Los usuarios no administradores solo podrán ver los roles públicos.
+- El acceso está permitido a:
+  - Administradores o coordinadores
+  - Usuarios que estén inscriptos en el mismo curso que el usuario solicitado
+- Si el usuario solicitado existe pero no se tiene permiso para verlo, la API simulará un error 404 para evitar filtrado de información.
+
+`GET /users/by-course/{courseId}`
+- Los usuarios no administradores solo podrán ver los roles públicos.
+- Los usuarios baneados están incluidos en la respuesta.
+
 ### Códigos de error
 ```
 BAD_CREDENTIALS_401
@@ -109,6 +123,7 @@ UNAUTHORIZED_401
 USER_BANNED_403
 ```
 
+
 ## Instalación
 ### Variables de entorno
 ```
@@ -122,3 +137,6 @@ USER_BANNED_403
 | STBOARD_JWT_SECRET  | STBOARD_TEST_JWT_SECRET  | secret        |
 
 ```
+
+## Referencia técnica:
+* [docs/README.md](docs/README.md) (OpenApi Generator)

@@ -27,26 +27,17 @@ Next steps:
 - **Build Tool**: Maven
 - **Testing**: Spring Boot Test + Spring Security Test
 
-## Full reference:
-* [docs/README.md](docs/README.md) (OpenApi Generator)
-
 ## <sub>Business rules</sub><br>Business Rules
 
 #### User types and their main function
 * **Administrator**: `Registers users and assigns roles`
 * **Coordinator**: `Registers courses and enrolls users`
-* **Moderator**: `Suspends users and edits/deletes messages`
-* **Teachers and students**: `Create threads and replies`
+* **Moderator***: `Suspends users and edits/deletes messages`
+* **Teachers and students***: `Create threads and replies`
 
 `Unauthenticated users can query the course list and courses by id.`
 
-Enrollable users:
-_(Users susceptible to being enrolled in a course with effect on the scope of their permissions for certain operations)_
-
-* Moderator
-* Teacher
-* Student
-
+(*): _Users susceptible to being enrolled in a course with effect on the scope of their permissions for certain operations_
 
 #### Login
 
@@ -92,6 +83,30 @@ authentication process.
 
 ```
 
+## Notes on reply depth structure
+
+Replies can be organized hierarchically up to a maximum of three levels, starting with those that respond directly to the topic:
+
+- Level 1: Reply to the topic (no parent reply)
+- Level 2: Reply to another reply
+- Level 3: Nested reply (second-level reply)
+
+Attempts to exceed this limit will result in an error with code: `DEPTH_EXCEEDED_400`.
+
+## Special endpoint permission notes
+
+`GET /users/{userId}`
+- Non-admin users will only see public roles.
+- Access is granted to:
+  - Administrators or coordinators
+  - Users enrolled in the same course as the requested user
+- If the requested user exists but access is not authorized, the API will simulate a 404 response to prevent information disclosure.
+
+`GET /users/by-course/{courseId}`
+- Non-admin users will only see public roles.
+- Banned users are included in the response.
+
+
 ### Error codes
 ```
 BAD_CREDENTIALS_401
@@ -122,3 +137,7 @@ USER_BANNED_403
 | STBOARD_JWT_SECRET  | STBOARD_TEST_JWT_SECRET  | secret        |
 
 ```
+
+## Technical reference:
+* [docs/README.md](docs/README.md) (OpenApi Generator)
+
