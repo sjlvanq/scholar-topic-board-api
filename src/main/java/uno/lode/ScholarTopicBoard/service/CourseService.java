@@ -13,7 +13,6 @@ import uno.lode.ScholarTopicBoard.domain.course.CourseRepository;
 import uno.lode.ScholarTopicBoard.domain.course.dto.CourseDetailDTO;
 import uno.lode.ScholarTopicBoard.domain.course.dto.CourseRegisterRequestDTO;
 import uno.lode.ScholarTopicBoard.domain.course.dto.CourseUpdateRequestDTO;
-import uno.lode.ScholarTopicBoard.domain.user.UserRepository;
 import uno.lode.ScholarTopicBoard.infra.exception.course.CourseAlreadyExistsException;
 import uno.lode.ScholarTopicBoard.infra.exception.course.CourseDeletionLockedException;
 import uno.lode.ScholarTopicBoard.infra.exception.course.CourseNotFoundException;
@@ -22,8 +21,6 @@ import uno.lode.ScholarTopicBoard.infra.exception.course.CourseNotFoundException
 public class CourseService {
 	@Autowired
 	private CourseRepository courseRepository;
-	@Autowired
-    private UserRepository userRepository;
 	
 	public List<CourseDetailDTO> getAllCourses() {
 		return courseRepository.findAll().stream()
@@ -71,9 +68,4 @@ public class CourseService {
 	        throw new CourseDeletionLockedException();
 	    }
 	}
-	
-    public boolean isEnrolled(Long courseId, Long userId) {
-        return userRepository.existsByIdAndCoursesIdAndDeletedFalse(userId, courseId);
-    }
-
 }
