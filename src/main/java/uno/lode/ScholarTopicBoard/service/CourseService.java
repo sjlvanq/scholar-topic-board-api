@@ -7,7 +7,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.validation.Valid;
 import uno.lode.ScholarTopicBoard.domain.course.Course;
 import uno.lode.ScholarTopicBoard.domain.course.CourseRepository;
 import uno.lode.ScholarTopicBoard.domain.course.dto.CourseDetailDTO;
@@ -41,7 +40,7 @@ public class CourseService {
 	}
 
 	@Transactional
-	public CourseDetailDTO createCourse(@Valid CourseRegisterRequestDTO courseData) {
+	public CourseDetailDTO createCourse(CourseRegisterRequestDTO courseData) {
         if (courseRepository.existsByName(courseData.name())) {
             throw new CourseAlreadyExistsException(courseData.name());
         }
@@ -50,7 +49,7 @@ public class CourseService {
 	}
 
 	@Transactional
-	public CourseDetailDTO updateCourse(Long courseId, @Valid CourseUpdateRequestDTO courseData) {
+	public CourseDetailDTO updateCourse(Long courseId, CourseUpdateRequestDTO courseData) {
 		if (courseRepository.existsByNameAndIdNot(courseData.name(), courseId)) {
             throw new CourseAlreadyExistsException(courseData.name());
         }
