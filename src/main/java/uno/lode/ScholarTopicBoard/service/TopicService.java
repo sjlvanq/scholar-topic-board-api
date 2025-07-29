@@ -46,9 +46,7 @@ public class TopicService {
 		Course course = validateCourseAccess(authUser, courseId);
 		Topic topic = findTopicOrThrow(topicId);
 		// Topic belong to course check
-		if(!topic.getCourse().getId().equals(courseId)) {
-			throw new TopicDoesNotBelongToCourseException();
-		}
+		checkTopicBelongToCourse(topic, courseId);
 		serviceUtil.checkAdminModeratorOrAuthor(authUser, topic);
 		if (topicRepository.existsByTitleAndCourseIdAndIdNot(topicData.title(), courseId, topicId)) {
 			throw new TopicAlreadyExistsException(topicData.title());
@@ -70,10 +68,7 @@ public class TopicService {
 	public TopicWithAuthorDTO getTopic(AuthUser authUser, Long courseId, Long topicId) {
 		Course course = validateCourseAccess(authUser, courseId);
 		Topic topic = findTopicWithAuthorOrThrow(topicId);
-		// Topic belong to course check
-		if(!topic.getCourse().getId().equals(courseId)) {
-			throw new TopicDoesNotBelongToCourseException();
-		}
+		checkTopicBelongToCourse(topic, courseId);
 		return new TopicWithAuthorDTO(topic);
 	}
 
@@ -87,10 +82,7 @@ public class TopicService {
 	public void deleteTopic(AuthUser authUser, Long courseId, Long topicId) {
 		Course course = validateCourseAccess(authUser, courseId);
 		Topic topic = findTopicOrThrow(topicId);
-		// Topic belong to course check
-		if(!topic.getCourse().getId().equals(courseId)){
-			throw new TopicDoesNotBelongToCourseException();
-		}
+		checkTopicBelongToCourse(topic, courseId);
 		serviceUtil.checkAdminModeratorOrAuthor(authUser, topic);
 		topicRepository.delete(topic);
 	}
@@ -105,6 +97,12 @@ public class TopicService {
 		.orElseThrow(() -> new TopicNotFoundException(topicId));
 	}
 
+	private void checkTopicBelongToCourse(Topic topic, Long courseId) {
+		if(!topic.getCourse().getId().equals(courseId)){
+			throw new TopicDoesNotBelongToCourseException();
+		}		
+	}
+	
 	/*
 	 * Check course existence and user privileges (admin or enrolled)
 	 * @Return Course
