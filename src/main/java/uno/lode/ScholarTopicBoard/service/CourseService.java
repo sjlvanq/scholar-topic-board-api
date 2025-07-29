@@ -59,6 +59,7 @@ public class CourseService {
 		return new CourseDetailDTO(course);
 	}
 
+	@Transactional
 	public void deleteCourse(Long courseId) {
 	    Course course = courseRepository.findById(courseId)
 	        .orElseThrow(() -> new CourseNotFoundException(courseId));
