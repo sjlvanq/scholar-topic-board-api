@@ -50,12 +50,13 @@ public class CourseService {
 
 	@Transactional
 	public CourseDetailDTO updateCourse(Long courseId, CourseUpdateRequestDTO courseData) {
+		Course course = courseRepository.findById(courseId)
+			.orElseThrow(() -> new CourseNotFoundException(courseId));
 		if (courseRepository.existsByNameAndIdNot(courseData.name(), courseId)) {
             throw new CourseAlreadyExistsException(courseData.name());
         }
-		Course courseRef = courseRepository.getReferenceById(courseId);
-		courseRef.update(courseData);
-		return new CourseDetailDTO(courseRef);
+		course.update(courseData);
+		return new CourseDetailDTO(course);
 	}
 
 	public void deleteCourse(Long courseId) {
