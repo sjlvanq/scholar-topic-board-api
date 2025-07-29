@@ -31,7 +31,8 @@ public class SecurityFilter extends OncePerRequestFilter {
     		FilterChain filterChain) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.substring(0, "BEARER ".length()).equalsIgnoreCase("BEARER ")) {
+        if (authHeader != null && authHeader.length() > "BEARER ".length() && 
+        		authHeader.substring(0, "BEARER ".length()).equalsIgnoreCase("BEARER ")) {
             String token = authHeader.split(" ")[1].trim(); //System.out.println(token);
             String userEmail = tokenService.getSubject(token);
 
