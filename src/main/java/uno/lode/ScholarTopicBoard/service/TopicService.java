@@ -32,7 +32,7 @@ public class TopicService {
 
 	@Transactional
 	public TopicDetailDTO createTopic(AuthUser authUser, Long courseId, TopicRegisterRequestDTO topicData) {
-		Course course = validateCourseAccess(authUser, courseId);
+		Course course = getValidatedCourse(authUser, courseId);
 		if (topicRepository.existsByTitleAndCourseId(topicData.title(), courseId)) {
 			throw new TopicAlreadyExistsException(topicData.title());}
 		//User author = findUserOrThrow(authUser.getId());
@@ -43,7 +43,7 @@ public class TopicService {
 
 	@Transactional
 	public TopicDetailDTO updateTopic(AuthUser authUser, Long courseId, Long topicId, TopicUpdateRequestDTO topicData) {
-		Course course = validateCourseAccess(authUser, courseId);
+		Course course = getValidatedCourse(authUser, courseId);
 		Topic topic = findTopicOrThrow(topicId);
 		// Topic belong to course check
 		checkTopicBelongToCourse(topic, courseId);
@@ -57,8 +57,7 @@ public class TopicService {
 
 	@Transactional(readOnly = true)
 	public List<TopicWithAuthorDTO> listByCourse(AuthUser authUser, Long courseId) {
-		Course course = validateCourseAccess(authUser, courseId);
-		//return topicRepository.findByCourseId(courseId)
+		Course course = getValidatedCourse(authUser, courseId);
 		return topicRepository.findByCourseWithAuthor(course)
 				.stream().map(TopicWithAuthorDTO::new)
 				.toList();
@@ -66,7 +65,7 @@ public class TopicService {
 
 	@Transactional(readOnly = true)
 	public TopicWithAuthorDTO getTopic(AuthUser authUser, Long courseId, Long topicId) {
-		Course course = validateCourseAccess(authUser, courseId);
+		Course course = getValidatedCourse(authUser, courseId);
 		Topic topic = findTopicWithAuthorOrThrow(topicId);
 		checkTopicBelongToCourse(topic, courseId);
 		return new TopicWithAuthorDTO(topic);
@@ -80,13 +79,28 @@ public class TopicService {
 
 	@Transactional
 	public void deleteTopic(AuthUser authUser, Long courseId, Long topicId) {
-		Course course = validateCourseAccess(authUser, courseId);
+		Course course = getValidatedCourse(authUser, courseId);
 		Topic topic = findTopicOrThrow(topicId);
 		checkTopicBelongToCourse(topic, courseId);
 		serviceUtil.checkAdminModeratorOrAuthor(authUser, topic);
 		topicRepository.delete(topic);
 	}
 
+	private Course findCourseOrThrow(Long courseId) {
+		return courseRepository.findById(courseId)
+			.orElseThrow(() -> new CourseNotFoundException(courseId));
+	}
+	
+	private void checkUserHasCourseAccess(AuthUser authUser, Course course) {
+	    serviceUtil.checkAdminCoordinatorOrEnrolled(authUser, course);
+	}
+
+	private Course getValidatedCourse(AuthUser authUser, Long courseId) {
+		Course course = findCourseOrThrow(courseId);
+		checkUserHasCourseAccess(authUser, course);
+		return course;
+	}
+	
 	private Topic findTopicOrThrow(Long topicId) {
 		return topicRepository.findById(topicId)
 		.orElseThrow(() -> new TopicNotFoundException(topicId));
@@ -103,15 +117,5 @@ public class TopicService {
 		}		
 	}
 	
-	/*
-	 * Check course existence and user privileges (admin or enrolled)
-	 * @Return Course
-	 */
-	private Course validateCourseAccess(AuthUser authUser, Long courseId) {
-		Course course = courseRepository.findById(courseId)
-				.orElseThrow(() -> new CourseNotFoundException(courseId));
-		serviceUtil.checkAdminCoordinatorOrEnrolled(authUser, course);
-		return course;
-	}
-
+	
 }
