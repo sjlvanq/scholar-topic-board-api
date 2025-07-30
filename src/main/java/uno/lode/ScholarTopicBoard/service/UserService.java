@@ -51,13 +51,12 @@ public class UserService {
 	private ServiceUtil serviceUtil;
 
 	public List<UserListItemDTO> getAllUsers(UserListFilter includes) {
-		List<User> users;
+		List<User> users = null;
 		switch(includes) {
 	        case ACTIVE -> users = userRepository.findAllByDeletedFalse();
 	        case DELETED -> users = userRepository.findAllByDeletedTrue();
 	        case ALL -> users = userRepository.findAll();
-	        default -> throw new RuntimeException(); //throw new IllegalArgumentException("Tipo de listado no soportado: " + includes);
-		}
+	    }
 		return users.stream().map(UserListItemDTO::new).toList();
 	}
 
