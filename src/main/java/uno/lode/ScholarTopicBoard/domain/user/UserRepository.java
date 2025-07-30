@@ -10,11 +10,11 @@ import org.springframework.data.repository.query.Param;
 public interface UserRepository extends JpaRepository<User, Long> {
 
 	boolean existsByEmail(String email);
-	
-	boolean existsByEmailAndIdNot(String email, Long userId);
 
 	boolean existsByEmailAndDeletedFalse(String email);
-	
+
+	boolean existsByEmailAndIdNot(String email, Long userId);
+
 	boolean existsByIdAndCoursesIdAndDeletedFalse(Long userId, Long courseId);
 
 	List<User> findAll();
@@ -35,6 +35,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 	@Query("SELECT u FROM User u JOIN FETCH u.roles r WHERE u.deleted = false and u.id = :userId")
 	Optional<User> findById(@Param("userId") Long userId);
+
+	@Query("SELECT CASE WHEN COUNT(r) > 0 THEN true ELSE false END " +
+			"FROM User u JOIN u.roles r WHERE u.id = :userId AND r.name = :roleName")
+	boolean hasRole(@Param("userId") Long userId, @Param("roleName") String roleName);
 	
 	@Query("SELECT COUNT(u) > 0 FROM User u JOIN u.courses c WHERE u.id = :userId AND c.id = :courseId")
 	boolean isUserEnrolledInCourse(@Param("userId") Long userId, @Param("courseId") Long courseId);
@@ -47,5 +51,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
 			"AND u1.deleted = false AND u2.deleted = false", 
     nativeQuery = true)
 	boolean sharesCoursesWith(@Param("authUserId") Long authUserId, @Param("targetUserId") Long targetUserId);
-
 }

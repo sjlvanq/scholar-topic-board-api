@@ -11,8 +11,9 @@ A Spring Boot 3 forum API REST [[ES](README_es.md)]
 > It is not intended for use in production environments.
 
 Next steps:
-* Review and increase test coverage  
-* Optimize database queries  
+* Separate logic into dedicated services
+* Review and expand test coverage
+* Optimize database queries and avoid N+1 problems
 * Review and consolidate the exception handling system  
 * ...
 
@@ -106,6 +107,11 @@ Attempts to exceed this limit will result in an error with code: `DEPTH_EXCEEDED
 - Non-admin users will only see public roles.
 - Banned users are included in the response.
 
+// CURRENTLY WORKING ON
+`PATCH /users/{userId}/ban`
+- Admins cannot ban other admins
+- Moderators can only ban regular users from shared courses
+- Other users cannot ban
 
 ### Error codes
 ```

@@ -11,9 +11,10 @@ API REST de foro con Spring Boot 3 [[EN](README.md)]
 > No está pensado para su uso en entornos de producción.
 
 Próximos pasos:
+* Separar la lógica en servicios dedicados
 * Revisar y ampliar cobertura de tests
-* Optimizar consultas a la base de datos
-* Revisar y consolidar el sistema de excepciones
+* Optimizar las consultas de base de datos y evitar problemas N+1
+* Revisar y consolidar el sistema de manejo de excepciones
 * ...
 
 ## Stack técnico
@@ -100,11 +101,17 @@ Intentar exceder este límite resultará en un error con el código: `DEPTH_EXCE
 - El acceso está permitido a:
   - Administradores o coordinadores
   - Usuarios que estén inscriptos en el mismo curso que el usuario solicitado
-- Si el usuario solicitado existe pero no se tiene permiso para verlo, la API simulará un error 404 para evitar filtrado de información.
+- Si el usuario solicitado existe pero no se tiene permisos para verlo, la API simulará un error 404
 
 `GET /users/by-course/{courseId}`
 - Los usuarios no administradores solo podrán ver los roles públicos.
 - Los usuarios baneados están incluidos en la respuesta.
+
+// PENDIENTE DE IMPLEMENTACIÓN
+`PATCH /users/{userId}/ban`
+- Los administradores no pueden banear a otros administradores
+- Los moderadores solo pueden banear usuarios regulares con quienes compartan cursos
+- Los demás usuarios no pueden banear
 
 ### Códigos de error
 ```
