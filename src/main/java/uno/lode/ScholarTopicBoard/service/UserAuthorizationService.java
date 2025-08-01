@@ -22,25 +22,28 @@ public class UserAuthorizationService {
 	@Autowired
 	UserRepository userRepository;
 	
-	void authorizeAuthor(AuthUser authUser, Authorable authorable) {
+	void ensureCanAccessAuthorable(AuthUser authUser, Authorable authorable) {
 		if( !(isAdminOrModerator(authUser) || authorable.isAuthoredBy(authUser.getId())) ){
 			throw new AccessDeniedException("Access denied!");
 		}
 	}
 	
-	private boolean canViewRole(Role role, AuthUser authUser) {
-        return authUser.isAdmin() || role.getIsPublic();
-    }
-	
 	void ensureCanBan(AuthUser authUser, User targetUser) {
-		if(authUser.getId().equals(targetUser.getId())) {
-		    throw new AccessDeniedException("Cannot ban yourself!");
-		}
+		// Enforces business-specific ban rules beyond role-based controller
+		// restrictions
 		
+		// Only admin or moderator can ban users
 		if(!authUser.isAdmin() && !authUser.isModerator()) {
 			throw new AccessDeniedException("Access denied!");
 		}
 		
+		// Users cannot ban themselves
+		if(authUser.getId().equals(targetUser.getId())) {
+		    throw new AccessDeniedException("Cannot ban yourself!");
+		}
+
+		// Admin restrictions:
+		// - Can ban any user except other admins
 		if(authUser.isAdmin()) {
 	        if(hasRole(targetUser, RoleConstants.ADMIN)) {
 	            throw new AccessDeniedException("Admins cannot ban other admins!");
@@ -48,6 +51,9 @@ public class UserAuthorizationService {
 	        return;
 	    }
 		
+		// Moderator restriction:
+		// - Cannot ban admins, other moderators, or coordinators
+		// - Can only ban users enrolled in a shared course
 	    if(authUser.isModerator()) {
 	        // Can't ban admins, moderators, o coordinators
 	        if(hasRole(targetUser, RoleConstants.ADMIN) || 
@@ -87,6 +93,14 @@ public class UserAuthorizationService {
 				.map(RolePublicResponseDTO::new).toList();
 	}
 	
+	private boolean canViewRole(Role role, AuthUser authUser) {
+        return authUser.isAdmin() || role.getIsPublic();
+    }
+	
+	private boolean hasRole(User user, String roleName) {
+	    return userRepository.hasRole(user.getId(), roleName);
+	}
+	
 	private boolean isAdminOrCoordinator(AuthUser authUser) {
 		return (authUser.isAdmin() || authUser.isCoord());
 	}
@@ -97,9 +111,5 @@ public class UserAuthorizationService {
 	
 	private boolean isPartner(AuthUser authUser, User user) {
 		return userRepository.sharesCoursesWith(authUser.getId(), user.getId());
-	}
-	
-	private boolean hasRole(User user, String roleName) {
-	    return userRepository.hasRole(user.getId(), roleName);
 	}
 }
