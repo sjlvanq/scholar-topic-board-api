@@ -292,9 +292,10 @@ public class UserController {
 	@PatchMapping("/{userId}/ban")
     @RolesAllowed({RoleConstants.ADMIN, RoleConstants.MODERATOR})
 	public ResponseEntity<?> banUser(
+			@AuthenticationPrincipal AuthUser authUser,
 			@PathVariable Long userId,
 			@RequestBody @Valid UserBanStatusUpdateRequestDTO userBanStatus){
-		userService.updateUserBanStatus(userId, userBanStatus);
+		userService.updateUserBanStatus(authUser, userId, userBanStatus);
 		return ResponseEntity.noContent().build();
 	}
 	

@@ -7,7 +7,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import uno.lode.ScholarTopicBoard.domain.course.Course;
 import uno.lode.ScholarTopicBoard.domain.course.CourseRepository;
@@ -29,11 +28,9 @@ import uno.lode.ScholarTopicBoard.domain.user.dto.UserRolesUpdateRequestDTO;
 import uno.lode.ScholarTopicBoard.domain.user.dto.UserUpdateRequestDTO;
 import uno.lode.ScholarTopicBoard.infra.exception.course.CourseNotFoundException;
 import uno.lode.ScholarTopicBoard.infra.exception.role.RoleNotFoundException;
-import uno.lode.ScholarTopicBoard.infra.exception.user.FakeUserNotFoundException;
 import uno.lode.ScholarTopicBoard.infra.exception.user.UserAlreadyExistsException;
 import uno.lode.ScholarTopicBoard.infra.exception.user.UserNotFoundException;
 import uno.lode.ScholarTopicBoard.infra.security.AuthUser;
-import uno.lode.ScholarTopicBoard.util.ServiceUtil;
 
 @Service
 public class UserService {
@@ -43,12 +40,11 @@ public class UserService {
 	private RoleRepository roleRepository;
 	@Autowired
 	private CourseRepository courseRepository;
+	@Autowired
+	private UserAuthorizationService authorizationService;
 
 	@Autowired
     private PasswordEncoder passwordEncoder;
-	
-	@Autowired
-	private ServiceUtil serviceUtil;
 
 	public List<UserListItemDTO> getAllUsers(UserListFilter includes) {
 		List<User> users = null;
@@ -62,18 +58,16 @@ public class UserService {
 
 	public List<UserListItemDTO> getAllUsersByCourse(AuthUser authUser, Long courseId) {
 		Course course = courseRepository.findById(courseId).orElseThrow(()->new CourseNotFoundException(courseId));
-		serviceUtil.checkAdminCoordinatorOrEnrolled(authUser, course);
+		authorizationService.ensureHasCourseAccess(authUser, course);
 		return userRepository.findAllByCoursesIdAndDeletedFalse(courseId).stream()
-				.map(u -> new UserListItemDTO(u, getVisibleRoles(u, authUser))).toList();
+				.map(u -> new UserListItemDTO(u, authorizationService.getVisibleRoles(u, authUser))).toList();
 	}
 	
 	public UserDetailDTO getUserById(AuthUser authUser, Long id) {
 		User user = findUserByIdOrThrow(id);
-		if(!serviceUtil.isAdminCoordinatorOrHasSharedCourse(authUser, user.getId())) {
-			throw new FakeUserNotFoundException(id);
-		}
+		authorizationService.ensureCanViewUser(authUser, user);
 		
-		List<RolePublicResponseDTO> visibleRoles = getVisibleRoles(user, authUser);
+		List<RolePublicResponseDTO> visibleRoles = authorizationService.getVisibleRoles(user, authUser);
 		List<CourseSummaryDTO> courses = user.getCourses() != null
 				? user.getCourses().stream().map(CourseSummaryDTO::new).toList()
 				: List.of();
@@ -95,17 +89,13 @@ public class UserService {
 
 	@Transactional
 	public UserResponseDTO updateUser(Long userId, @Valid UserUpdateRequestDTO userData) {
-		try {
-			User userRef = userRepository.getReferenceById(userId);
-			if (userRepository.existsByEmailAndIdNot(userData.email(), userId)) { // Includes deleted users
-				throw new UserAlreadyExistsException(userData.email());
-			}
-			String hashedPassword = (userData.password()!=null) ? passwordEncoder.encode(userData.password()) : null;
-			userRef.update(userData, hashedPassword);
-			return new UserResponseDTO(userRef);
-		} catch (EntityNotFoundException e) {
-			throw new UserNotFoundException(userId);
+		User user = findUserByIdOrThrow(userId);
+		if (userRepository.existsByEmailAndIdNot(userData.email(), userId)) { // Includes deleted users
+			throw new UserAlreadyExistsException(userData.email());
 		}
+		String hashedPassword = (userData.password()!=null) ? passwordEncoder.encode(userData.password()) : null;
+		user.update(userData, hashedPassword);
+		return new UserResponseDTO(user);
 	}
 	
 	@Transactional
@@ -138,26 +128,14 @@ public class UserService {
 	}
 
 	@Transactional
-	public void updateUserBanStatus(Long userId, @Valid UserBanStatusUpdateRequestDTO userBanStatus) {
-		try {
-			User userRef = userRepository.getReferenceById(userId);
-			userRef.setBanned(userBanStatus.status());
-		} catch (EntityNotFoundException e) {
-			throw new UserNotFoundException(userId);
-		}
+	public void updateUserBanStatus(AuthUser authUser, Long userId, @Valid UserBanStatusUpdateRequestDTO userBanStatus) {
+		User targetUser = findUserByIdOrThrow(userId);
+		authorizationService.ensureCanBan(authUser, targetUser);
+		targetUser.setBanned(userBanStatus.status());
 	}
 	
 	private User findUserByIdOrThrow(Long userId) {
 		return userRepository.findById(userId)
 			.orElseThrow(() -> new UserNotFoundException(userId));
-	}
-	
-	private List<RolePublicResponseDTO> getVisibleRoles(User user, AuthUser authUser) {
-		if (user.getRoles() == null)
-			return List.of();
-
-		return user.getRoles().stream()
-				.filter(role -> authUser.isAdmin() || role.getIsPublic()).map(RolePublicResponseDTO::new)
-					.toList();
 	}
 }
