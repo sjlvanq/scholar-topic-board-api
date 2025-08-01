@@ -24,7 +24,7 @@ import uno.lode.ScholarTopicBoard.infra.exception.user.FakeUserNotFoundException
 import uno.lode.ScholarTopicBoard.infra.security.AuthUser;
 
 @ExtendWith(MockitoExtension.class)
-class UserAuthorizationServiceTest {
+class UserAuthorizationServiceUnitTest {
 
     @Mock
     private UserRepository userRepository;
