@@ -56,7 +56,7 @@ class UserAuthorizationServiceTest {
 
     @Nested
     @DisplayName("ensureCanAccessAuthorable tests")
-    class ensureCanAccessAuthorable {
+    class EnsureCanAccessAuthorable {
 
         @Test
         @DisplayName("Should allow admin to access any authorable")
