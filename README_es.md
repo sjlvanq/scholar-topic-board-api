@@ -107,7 +107,6 @@ Intentar exceder este límite resultará en un error con el código: `DEPTH_EXCE
 - Los usuarios no administradores solo podrán ver los roles públicos.
 - Los usuarios baneados están incluidos en la respuesta.
 
-// PENDIENTE DE IMPLEMENTACIÓN
 `PATCH /users/{userId}/ban`
 - Los administradores no pueden banear a otros administradores
 - Los moderadores solo pueden banear usuarios regulares con quienes compartan cursos

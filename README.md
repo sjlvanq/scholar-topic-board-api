@@ -1,7 +1,7 @@
 [![Alura + Oracle ONE](https://app.aluracursos.com/form-one/assets/images/logo-aluralatam-oracle.svg)](https://aluracursos.com)
 
 <sub>Java y Spring Framework (II) G8 - ONE </sub><br> 
-Challenge: <ins>Forum Hub</ins>
+Challenge: <ins>Foro Hub</ins>
 
 # Scholar Topic Board API
 <sub>API REST de foro con Spring Boot 3</sub><br>
@@ -107,7 +107,6 @@ Attempts to exceed this limit will result in an error with code: `DEPTH_EXCEEDED
 - Non-admin users will only see public roles.
 - Banned users are included in the response.
 
-// CURRENTLY WORKING ON
 `PATCH /users/{userId}/ban`
 - Admins cannot ban other admins
 - Moderators can only ban regular users from shared courses
