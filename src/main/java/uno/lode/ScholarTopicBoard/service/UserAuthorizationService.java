@@ -2,10 +2,10 @@ package uno.lode.ScholarTopicBoard.service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
 import uno.lode.ScholarTopicBoard.domain.course.Course;
 import uno.lode.ScholarTopicBoard.domain.role.Role;
 import uno.lode.ScholarTopicBoard.domain.role.dto.RolePublicResponseDTO;
@@ -17,10 +17,10 @@ import uno.lode.ScholarTopicBoard.infra.exception.user.FakeUserNotFoundException
 import uno.lode.ScholarTopicBoard.infra.security.AuthUser;
 
 @Service
+@RequiredArgsConstructor
 public class UserAuthorizationService {
 
-	@Autowired
-	UserRepository userRepository;
+	private final UserRepository userRepository;
 	
 	void ensureCanAccessAuthorable(AuthUser authUser, Authorable authorable) {
 		if( !(isAdminOrModerator(authUser) || authorable.isAuthoredBy(authUser.getId())) ){
