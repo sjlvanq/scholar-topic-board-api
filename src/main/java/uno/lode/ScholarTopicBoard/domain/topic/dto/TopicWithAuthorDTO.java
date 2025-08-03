@@ -1,7 +1,5 @@
 package uno.lode.ScholarTopicBoard.domain.topic.dto;
 
-import java.time.LocalDateTime;
-
 import uno.lode.ScholarTopicBoard.domain.topic.Topic;
 import uno.lode.ScholarTopicBoard.domain.user.dto.UserAuthorDTO;
 

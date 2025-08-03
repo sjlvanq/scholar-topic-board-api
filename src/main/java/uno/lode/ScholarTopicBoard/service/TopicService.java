@@ -21,21 +21,20 @@ import uno.lode.ScholarTopicBoard.infra.exception.topic.TopicAlreadyExistsExcept
 import uno.lode.ScholarTopicBoard.infra.exception.topic.TopicDoesNotBelongToCourseException;
 import uno.lode.ScholarTopicBoard.infra.exception.topic.TopicNotFoundException;
 import uno.lode.ScholarTopicBoard.infra.security.AuthUser;
-import uno.lode.ScholarTopicBoard.util.ServiceUtil;
 
 @Service
 @RequiredArgsConstructor
 public class TopicService {
 	private final TopicRepository topicRepository;
 	private final CourseRepository courseRepository;
-	private final ServiceUtil serviceUtil;
+	private final UserAuthorizationService userAuthorizationService;
 
 	@Transactional
 	public TopicDetailDTO createTopic(AuthUser authUser, Long courseId, TopicRegisterRequestDTO topicData) {
-		Course course = getValidatedCourse(authUser, courseId);
+		Course course = findCourseIfExistsAndHasAccessOrThrow(authUser, courseId);
 		if (topicRepository.existsByTitleAndCourseId(topicData.title(), courseId)) {
 			throw new TopicAlreadyExistsException(topicData.title());}
-		//User author = findUserOrThrow(authUser.getId());
+
 		User author = authUser.getUser();
 		Topic topic = topicRepository.save(new Topic(topicData, author, course));
 		return new TopicDetailDTO(topic);
@@ -43,21 +42,24 @@ public class TopicService {
 
 	@Transactional
 	public TopicDetailDTO updateTopic(AuthUser authUser, Long courseId, Long topicId, TopicUpdateRequestDTO topicData) {
-		Course course = getValidatedCourse(authUser, courseId);
+		Course course = findCourseIfExistsAndHasAccessOrThrow(authUser, courseId);
 		Topic topic = findTopicOrThrow(topicId);
-		// Topic belong to course check
 		checkTopicBelongToCourse(topic, courseId);
-		serviceUtil.checkAdminModeratorOrAuthor(authUser, topic);
-		if (topicRepository.existsByTitleAndCourseIdAndIdNot(topicData.title(), courseId, topicId)) {
+
+		userAuthorizationService.ensureCanAccessAuthorable(authUser, topic);
+		
+		// Maybe need trim
+		if (topicRepository.existsByTitleIgnoreCaseAndCourseIdAndIdNot(topicData.title(), courseId, topicId)) {
 			throw new TopicAlreadyExistsException(topicData.title());
 		}
+		
 		topic.update(topicData);
 		return new TopicDetailDTO(topic);
 	}
 
 	@Transactional(readOnly = true)
 	public List<TopicWithAuthorDTO> listByCourse(AuthUser authUser, Long courseId) {
-		Course course = getValidatedCourse(authUser, courseId);
+		Course course = findCourseIfExistsAndHasAccessOrThrow(authUser, courseId);
 		return topicRepository.findByCourseWithAuthor(course)
 				.stream().map(TopicWithAuthorDTO::new)
 				.toList();
@@ -65,9 +67,10 @@ public class TopicService {
 
 	@Transactional(readOnly = true)
 	public TopicWithAuthorDTO getTopic(AuthUser authUser, Long courseId, Long topicId) {
-		Course course = getValidatedCourse(authUser, courseId);
+		Course course = findCourseIfExistsAndHasAccessOrThrow(authUser, courseId);
 		Topic topic = findTopicWithAuthorOrThrow(topicId);
 		checkTopicBelongToCourse(topic, courseId);
+
 		return new TopicWithAuthorDTO(topic);
 	}
 
@@ -79,28 +82,28 @@ public class TopicService {
 
 	@Transactional
 	public void deleteTopic(AuthUser authUser, Long courseId, Long topicId) {
-		Course course = getValidatedCourse(authUser, courseId);
+		Course course = findCourseIfExistsAndHasAccessOrThrow(authUser, courseId);
+
 		Topic topic = findTopicOrThrow(topicId);
 		checkTopicBelongToCourse(topic, courseId);
-		serviceUtil.checkAdminModeratorOrAuthor(authUser, topic);
+
+		userAuthorizationService.ensureCanAccessAuthorable(authUser, topic);
+
 		topicRepository.delete(topic);
 	}
 
+	private Course findCourseIfExistsAndHasAccessOrThrow(AuthUser authUser, Long courseId) {
+		Course course = findCourseOrThrow(courseId);
+		userAuthorizationService.ensureHasCourseAccess(authUser, course);
+		return course;
+	}
+	
 	private Course findCourseOrThrow(Long courseId) {
 		return courseRepository.findById(courseId)
 			.orElseThrow(() -> new CourseNotFoundException(courseId));
 	}
 	
-	private void checkUserHasCourseAccess(AuthUser authUser, Course course) {
-	    serviceUtil.checkAdminCoordinatorOrEnrolled(authUser, course);
-	}
-
-	private Course getValidatedCourse(AuthUser authUser, Long courseId) {
-		Course course = findCourseOrThrow(courseId);
-		checkUserHasCourseAccess(authUser, course);
-		return course;
-	}
-	
+	// Used when author info is not needed; only checks existence
 	private Topic findTopicOrThrow(Long topicId) {
 		return topicRepository.findById(topicId)
 		.orElseThrow(() -> new TopicNotFoundException(topicId));
