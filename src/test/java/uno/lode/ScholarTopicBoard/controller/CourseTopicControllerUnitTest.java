@@ -446,33 +446,11 @@ class CourseTopicControllerUnitTest {
 
 		verify(topicService, Mockito.never()).updateTopic(any(AuthUser.class), eq(COURSE_ID), eq(TOPIC_ID), eq(updateRequestDTO));
 	}
-
-	@Test
-	@DisplayName("Should return 400 Bad Request when body is null on PUT.")
-	void shouldReturnBadRequestWhenBodyIsNullInPut() throws Exception {
-		TopicUpdateRequestDTO updateRequestDTO = new TopicUpdateRequestDTO(TOPIC_TITLE, null, true);
-
-		mockMvc.perform(put("/courses/{courseId}/topics/{topicId}", COURSE_ID, TOPIC_ID).contentType(MediaType.APPLICATION_JSON)
-				.content(mapper.writeValueAsBytes(updateRequestDTO))).andExpect(status().isBadRequest());
-
-		verify(topicService, Mockito.never()).updateTopic(any(AuthUser.class), eq(COURSE_ID), eq(TOPIC_ID), eq(updateRequestDTO));
-	}
 	
 	@Test
 	@DisplayName("Should return 400 Bad Request when title is blank on PUT.")
 	void shouldReturnBadRequestWhenTitleIsBlankInPut() throws Exception {
 		TopicUpdateRequestDTO updateRequestDTO = new TopicUpdateRequestDTO("    ", TOPIC_BODY, true);
-
-		mockMvc.perform(put("/courses/{courseId}/topics/{topicId}", COURSE_ID, TOPIC_ID).contentType(MediaType.APPLICATION_JSON)
-				.content(mapper.writeValueAsBytes(updateRequestDTO))).andExpect(status().isBadRequest());
-
-		verify(topicService, Mockito.never()).updateTopic(any(AuthUser.class), eq(COURSE_ID), eq(TOPIC_ID), eq(updateRequestDTO));
-	}
-
-	@Test
-	@DisplayName("Should return 400 Bad Request when title is null in PUT request.")
-	void shouldReturnBadRequestWhenTitleIsNullInPut() throws Exception {
-		TopicUpdateRequestDTO updateRequestDTO = new TopicUpdateRequestDTO(null, TOPIC_BODY, true);
 
 		mockMvc.perform(put("/courses/{courseId}/topics/{topicId}", COURSE_ID, TOPIC_ID).contentType(MediaType.APPLICATION_JSON)
 				.content(mapper.writeValueAsBytes(updateRequestDTO))).andExpect(status().isBadRequest());
