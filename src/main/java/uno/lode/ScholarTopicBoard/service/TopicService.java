@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import uno.lode.ScholarTopicBoard.domain.course.Course;
-import uno.lode.ScholarTopicBoard.domain.course.CourseRepository;
 import uno.lode.ScholarTopicBoard.domain.topic.Topic;
 import uno.lode.ScholarTopicBoard.domain.topic.TopicRepository;
 import uno.lode.ScholarTopicBoard.domain.topic.dto.TopicDetailDTO;
@@ -15,37 +14,30 @@ import uno.lode.ScholarTopicBoard.domain.topic.dto.TopicRegisterRequestDTO;
 import uno.lode.ScholarTopicBoard.domain.topic.dto.TopicUpdateRequestDTO;
 import uno.lode.ScholarTopicBoard.domain.topic.dto.TopicWithAuthorDTO;
 import uno.lode.ScholarTopicBoard.domain.topic.dto.TopicWithCourseDTO;
-import uno.lode.ScholarTopicBoard.domain.user.User;
-import uno.lode.ScholarTopicBoard.infra.exception.course.CourseNotFoundException;
 import uno.lode.ScholarTopicBoard.infra.exception.topic.TopicAlreadyExistsException;
-import uno.lode.ScholarTopicBoard.infra.exception.topic.TopicDoesNotBelongToCourseException;
-import uno.lode.ScholarTopicBoard.infra.exception.topic.TopicNotFoundException;
 import uno.lode.ScholarTopicBoard.infra.security.AuthUser;
 
 @Service
 @RequiredArgsConstructor
 public class TopicService {
 	private final TopicRepository topicRepository;
-	private final CourseRepository courseRepository;
+	private final DomainValidationService validationService;
 	private final UserAuthorizationService userAuthorizationService;
 
 	@Transactional
 	public TopicDetailDTO createTopic(AuthUser authUser, Long courseId, TopicRegisterRequestDTO topicData) {
-		Course course = findCourseIfExistsAndHasAccessOrThrow(authUser, courseId);
-		if (topicRepository.existsByTitleAndCourseId(topicData.title(), courseId)) {
+		Course course = validationService.findCourseWithAccess(authUser, courseId);
+		if (topicRepository.existsByTitleIgnoreCaseAndCourseId(topicData.title(), courseId)) {
 			throw new TopicAlreadyExistsException(topicData.title());}
 
-		User author = authUser.getUser();
-		Topic topic = topicRepository.save(new Topic(topicData, author, course));
+		Topic topic = topicRepository.save(new Topic(topicData, authUser.getUser(), course));
 		return new TopicDetailDTO(topic);
 	}
 
 	@Transactional
 	public TopicDetailDTO updateTopic(AuthUser authUser, Long courseId, Long topicId, TopicUpdateRequestDTO topicData) {
-		Course course = findCourseIfExistsAndHasAccessOrThrow(authUser, courseId);
-		Topic topic = findTopicOrThrow(topicId);
-		checkTopicBelongToCourse(topic, courseId);
-
+		validationService.ensureCourseHasAccess(authUser, courseId);
+		Topic topic = validationService.findTopicInCourse(topicId, courseId);
 		userAuthorizationService.ensureCanAccessAuthorable(authUser, topic);
 		
 		// Maybe need trim
@@ -59,7 +51,8 @@ public class TopicService {
 
 	@Transactional(readOnly = true)
 	public List<TopicWithAuthorDTO> listByCourse(AuthUser authUser, Long courseId) {
-		Course course = findCourseIfExistsAndHasAccessOrThrow(authUser, courseId);
+		Course course = validationService.findCourseWithAccess(authUser, courseId);
+		
 		return topicRepository.findByCourseWithAuthor(course)
 				.stream().map(TopicWithAuthorDTO::new)
 				.toList();
@@ -67,10 +60,9 @@ public class TopicService {
 
 	@Transactional(readOnly = true)
 	public TopicWithAuthorDTO getTopic(AuthUser authUser, Long courseId, Long topicId) {
-		Course course = findCourseIfExistsAndHasAccessOrThrow(authUser, courseId);
-		Topic topic = findTopicWithAuthorOrThrow(topicId);
-		checkTopicBelongToCourse(topic, courseId);
-
+		validationService.ensureCourseHasAccess(authUser, courseId);
+		Topic topic = validationService.findTopicInCourse(topicId, courseId);
+		
 		return new TopicWithAuthorDTO(topic);
 	}
 
@@ -82,43 +74,10 @@ public class TopicService {
 
 	@Transactional
 	public void deleteTopic(AuthUser authUser, Long courseId, Long topicId) {
-		Course course = findCourseIfExistsAndHasAccessOrThrow(authUser, courseId);
-
-		Topic topic = findTopicOrThrow(topicId);
-		checkTopicBelongToCourse(topic, courseId);
-
+		validationService.ensureCourseHasAccess(authUser, courseId);
+		Topic topic = validationService.findTopicInCourse(topicId, courseId);
 		userAuthorizationService.ensureCanAccessAuthorable(authUser, topic);
-
+				
 		topicRepository.delete(topic);
 	}
-
-	private Course findCourseIfExistsAndHasAccessOrThrow(AuthUser authUser, Long courseId) {
-		Course course = findCourseOrThrow(courseId);
-		userAuthorizationService.ensureHasCourseAccess(authUser, course);
-		return course;
-	}
-	
-	private Course findCourseOrThrow(Long courseId) {
-		return courseRepository.findById(courseId)
-			.orElseThrow(() -> new CourseNotFoundException(courseId));
-	}
-	
-	// Used when author info is not needed; only checks existence
-	private Topic findTopicOrThrow(Long topicId) {
-		return topicRepository.findById(topicId)
-		.orElseThrow(() -> new TopicNotFoundException(topicId));
-	}
-
-	private Topic findTopicWithAuthorOrThrow(Long topicId) {
-		return topicRepository.findByIdWithAuthor(topicId)
-		.orElseThrow(() -> new TopicNotFoundException(topicId));
-	}
-
-	private void checkTopicBelongToCourse(Topic topic, Long courseId) {
-		if(!topic.getCourse().getId().equals(courseId)){
-			throw new TopicDoesNotBelongToCourseException();
-		}		
-	}
-	
-	
 }
