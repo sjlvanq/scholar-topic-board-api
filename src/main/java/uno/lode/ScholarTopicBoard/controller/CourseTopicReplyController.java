@@ -1,7 +1,7 @@
 package uno.lode.ScholarTopicBoard.controller;
 
 import java.net.URI;
-import java.util.Set;
+import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -73,11 +73,11 @@ public class CourseTopicReplyController {
     })
 
 	@GetMapping
-	public ResponseEntity<Set<ReplyDetailDTO>> getAllReplies(
+	public ResponseEntity<List<ReplyDetailDTO>> getAllReplies(
 			@AuthenticationPrincipal AuthUser authUser,
 			@PathVariable Long courseId,
 			@PathVariable Long topicId){
-		Set<ReplyDetailDTO> repliesInCourseTopic = replyService.getRootReplies(authUser, courseId, topicId);
+		List<ReplyDetailDTO> repliesInCourseTopic = replyService.getRootReplies(authUser, courseId, topicId);
 		return repliesInCourseTopic.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(repliesInCourseTopic);
 	}
 

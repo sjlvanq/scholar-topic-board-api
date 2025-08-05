@@ -1,6 +1,6 @@
 package uno.lode.ScholarTopicBoard.domain.reply;
 
-import java.util.Set;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -33,6 +33,6 @@ public interface ReplyRepository extends JpaRepository<Reply, Long> {
 		    "children.children",
 		    "children.children.author"
 		})
-	Set<Reply> findByTopicIdAndParentIsNull(Long topicId);
+	List<Reply> findByTopicIdAndParentIsNull(Long topicId);
 
 }
