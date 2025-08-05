@@ -11,7 +11,6 @@ A Spring Boot 3 forum API REST [[ES](README_es.md)]
 > It is not intended for use in production environments.
 
 Next steps:
-* Separate logic into dedicated services
 * Review and expand test coverage
 * Optimize database queries and avoid N+1 problems
 * Review and consolidate the exception handling system  

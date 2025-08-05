@@ -11,7 +11,6 @@ API REST de foro con Spring Boot 3 [[EN](README.md)]
 > No está pensado para su uso en entornos de producción.
 
 Próximos pasos:
-* Separar la lógica en servicios dedicados
 * Revisar y ampliar cobertura de tests
 * Optimizar las consultas de base de datos y evitar problemas N+1
 * Revisar y consolidar el sistema de manejo de excepciones
