@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uno.lode.ScholarTopicBoard.domain.course.Course;
 import uno.lode.ScholarTopicBoard.domain.course.CourseRepository;
 import uno.lode.ScholarTopicBoard.domain.course.dto.CourseUpdateRequestDTO;
+import uno.lode.ScholarTopicBoard.infra.exception.base.EntityDomain;
 import uno.lode.ScholarTopicBoard.infra.exception.course.CourseAlreadyExistsException;
 import uno.lode.ScholarTopicBoard.infra.exception.course.CourseNotFoundException;
 
@@ -39,10 +40,14 @@ public class CourseServiceTest {
 		when(courseRepository.findById(2L)).thenReturn(Optional.of(mock(Course.class)));
 		when(courseRepository.existsByNameAndIdNot("course1", 2L)).thenReturn(true);
 
+		// When
 		CourseAlreadyExistsException ex = assertThrows(CourseAlreadyExistsException.class,
 				() -> courseService.updateCourse(2L, updateRequestDTO));
-		assertEquals("A course with the name 'course1' already exists!", ex.getMessage()); // TODO: exception method to
-																							// get field
+
+		// Then
+		assertEquals(EntityDomain.COURSE, ex.getAffectedEntity());
+		assertEquals("course1", ex.getConflictingValue());
+
 		verify(courseRepository).existsByNameAndIdNot(eq("course1"), eq(2L));
 		verifyNoMoreInteractions(courseRepository);
 	}
@@ -50,10 +55,14 @@ public class CourseServiceTest {
 	@Test
 	void shouldThrowExceptionWhenCourseNotFoundOnUpdate() {
 		CourseUpdateRequestDTO updateRequestDTO = new CourseUpdateRequestDTO("course1", "course desc", false);
-
+		
+		// When
 		CourseNotFoundException ex = assertThrows(CourseNotFoundException.class,
 				() -> courseService.updateCourse(3L, updateRequestDTO));
-		assertEquals("Course with id 3 not found!", ex.getMessage());
+
+		// Then
+		assertEquals(EntityDomain.COURSE, ex.getAffectedEntity());
+		assertEquals(3L, ex.getMissingValue());
 
 		verify(courseRepository, never()).existsByNameAndIdNot(any(), any());
 	}

@@ -30,6 +30,7 @@ import uno.lode.ScholarTopicBoard.domain.reply.ReplyRepository;
 import uno.lode.ScholarTopicBoard.domain.topic.Topic;
 import uno.lode.ScholarTopicBoard.domain.topic.TopicRepository;
 import uno.lode.ScholarTopicBoard.domain.user.User;
+import uno.lode.ScholarTopicBoard.infra.exception.base.EntityDomain;
 import uno.lode.ScholarTopicBoard.infra.exception.course.CourseNotFoundException;
 import uno.lode.ScholarTopicBoard.infra.exception.reply.ParentReplyDoesNotBelongToTopicException;
 import uno.lode.ScholarTopicBoard.infra.exception.reply.ReplyDoesNotBelongToTopicException;
@@ -107,8 +108,12 @@ class DomainValidationServiceUnitTest {
 			Long courseId = 102L;
 			when(courseRepository.findById(courseId)).thenReturn(Optional.empty());
 
-			// When + Then
-			assertThrows(CourseNotFoundException.class, () -> domainValidationService.findCourseOrThrow(courseId));
+			// When
+			CourseNotFoundException ex = assertThrows(CourseNotFoundException.class, () -> domainValidationService.findCourseOrThrow(courseId));
+
+			// Then
+			assertEquals(EntityDomain.COURSE, ex.getAffectedEntity());
+			assertEquals(courseId, ex.getMissingValue());
 			verify(courseRepository).findById(courseId);
 		}
 	}
@@ -140,8 +145,12 @@ class DomainValidationServiceUnitTest {
 			Long topicId = 224L;
 			when(topicRepository.findById(topicId)).thenReturn(Optional.empty());
 
-			// When + Then
-			assertThrows(TopicNotFoundException.class, () -> domainValidationService.findTopicOrThrow(topicId));
+			// When
+			TopicNotFoundException ex = assertThrows(TopicNotFoundException.class, () -> domainValidationService.findTopicOrThrow(topicId));
+
+			// Then
+			assertEquals(EntityDomain.TOPIC, ex.getAffectedEntity());
+			assertEquals(topicId, ex.getMissingValue());
 			verify(topicRepository).findById(topicId);
 		}
 	}
@@ -175,9 +184,13 @@ class DomainValidationServiceUnitTest {
 			Long topicId = 204L;
 			when(topicRepository.findByIdWithAuthor(topicId)).thenReturn(Optional.empty());
 
-			// When + Then
-			assertThrows(TopicNotFoundException.class,
+			// When
+			TopicNotFoundException ex = assertThrows(TopicNotFoundException.class,
 					() -> domainValidationService.findTopicWithAuthorOrThrow(topicId));
+
+			// Then
+			assertEquals(EntityDomain.TOPIC, ex.getAffectedEntity());
+			assertEquals(topicId, ex.getMissingValue());
 			verify(topicRepository).findByIdWithAuthor(topicId);
 		}
 	}
@@ -209,8 +222,12 @@ class DomainValidationServiceUnitTest {
 			Long replyId = 302L;
 			when(replyRepository.findById(replyId)).thenReturn(Optional.empty());
 
-			// When + Then
-			assertThrows(ReplyNotFoundException.class, () -> domainValidationService.findReplyOrThrow(replyId));
+			// When
+			ReplyNotFoundException ex = assertThrows(ReplyNotFoundException.class, () -> domainValidationService.findReplyOrThrow(replyId));
+
+			// Then
+			assertEquals(EntityDomain.REPLY, ex.getAffectedEntity());
+			assertEquals(replyId, ex.getMissingValue());
 			verify(replyRepository).findById(replyId);
 		}
 	}
@@ -242,9 +259,14 @@ class DomainValidationServiceUnitTest {
 			// Given
 			Long courseId = 104L;
 			AuthUser authUser = mock(AuthUser.class);
-			// When + Then
-			assertThrows(CourseNotFoundException.class,
+			// When
+			CourseNotFoundException ex = assertThrows(CourseNotFoundException.class,
 					() -> domainValidationService.ensureCourseHasAccess(authUser, courseId));
+
+			// Then
+			assertEquals(EntityDomain.COURSE, ex.getAffectedEntity());
+			assertEquals(courseId, ex.getMissingValue());
+
 			verify(courseRepository).findById(courseId);
 		}
 
@@ -312,11 +334,15 @@ class DomainValidationServiceUnitTest {
 			Long realCourseId = 140L;
 			Long topicId = 210L;
 			Topic topic = createTopic(topicId, realCourseId);
-			// When
 			when(topicRepository.findById(topicId)).thenReturn(Optional.of(topic));
-			// Then
-			assertThrows(TopicDoesNotBelongToCourseException.class,
+
+			// When
+			TopicDoesNotBelongToCourseException ex = assertThrows(TopicDoesNotBelongToCourseException.class,
 					() -> domainValidationService.ensureTopicBelongToCourse(topicId, paramCourseId));
+
+			// Then
+			assertEquals(EntityDomain.TOPIC, ex.getAffectedEntity());
+			assertEquals(EntityDomain.COURSE, ex.getParentEntity());
 			verify(topicRepository).findById(topicId);
 		}
 
@@ -326,9 +352,13 @@ class DomainValidationServiceUnitTest {
 			// Given
 			Long courseId = 109L;
 			Long topicId = 206L;
-			// When + Then
-			assertThrows(TopicNotFoundException.class,
+			// When
+			TopicNotFoundException ex = assertThrows(TopicNotFoundException.class,
 					() -> domainValidationService.ensureTopicBelongToCourse(topicId, courseId));
+
+			// Then
+			assertEquals(EntityDomain.TOPIC, ex.getAffectedEntity());
+			assertEquals(topicId, ex.getMissingValue());
 			verify(topicRepository).findById(topicId);
 		}
 	}
@@ -421,9 +451,13 @@ class DomainValidationServiceUnitTest {
 			Topic topic = createTopic(topicId, realCourseId);
 			when(topicRepository.findById(topicId)).thenReturn(Optional.of(topic));
 
-			// When + Then
-			assertThrows(TopicDoesNotBelongToCourseException.class,
+			// When
+			TopicDoesNotBelongToCourseException ex = assertThrows(TopicDoesNotBelongToCourseException.class,
 					() -> domainValidationService.findTopicInCourse(topicId, paramCourseId));
+
+			// Then
+			assertEquals(EntityDomain.TOPIC, ex.getAffectedEntity());
+			assertEquals(EntityDomain.COURSE, ex.getParentEntity());
 			verify(topicRepository).findById(topicId);
 		}
 
@@ -433,9 +467,13 @@ class DomainValidationServiceUnitTest {
 			// Given
 			Long courseId = 115L;
 			Long topicId = 215L;
-			// When + Then
-			assertThrows(TopicNotFoundException.class,
+			// When
+			TopicNotFoundException ex = assertThrows(TopicNotFoundException.class,
 					() -> domainValidationService.findTopicInCourse(topicId, courseId));
+
+			// Then
+			assertEquals(EntityDomain.TOPIC, ex.getAffectedEntity());
+			assertEquals(topicId, ex.getMissingValue());
 			verify(topicRepository).findById(topicId);
 		}
 	}
@@ -473,9 +511,13 @@ class DomainValidationServiceUnitTest {
 			when(reply.getTopic()).thenReturn(topic);
 			when(topic.getId()).thenReturn(realTopicId);
 			when(replyRepository.findById(replyId)).thenReturn(Optional.of(reply));
-			// When + Then
-			assertThrows(ReplyDoesNotBelongToTopicException.class,
+			// When
+			ReplyDoesNotBelongToTopicException ex = assertThrows(ReplyDoesNotBelongToTopicException.class,
 					() -> domainValidationService.findReplyInTopic(replyId, paramTopicId));
+
+			// Then
+			assertEquals(EntityDomain.REPLY, ex.getAffectedEntity());
+			assertEquals(EntityDomain.TOPIC, ex.getParentEntity());
 			verify(replyRepository).findById(replyId);
 		}
 
@@ -485,9 +527,13 @@ class DomainValidationServiceUnitTest {
 			// Given
 			Long topicId = 218L;
 			Long replyId = 318L;
-			// When + Then
-			assertThrows(ReplyNotFoundException.class,
+			// When
+			ReplyNotFoundException ex = assertThrows(ReplyNotFoundException.class,
 					() -> domainValidationService.findReplyInTopic(replyId, topicId));
+
+			// Then
+			assertEquals(EntityDomain.REPLY, ex.getAffectedEntity());
+			assertEquals(replyId, ex.getMissingValue());
 			verify(replyRepository).findById(replyId);
 		}
 	}
@@ -539,9 +585,12 @@ class DomainValidationServiceUnitTest {
 			when(topic.getId()).thenReturn(realTopicId);
 			when(parentReply.getTopic()).thenReturn(topic);
 			when(replyRepository.findById(parentReplyId)).thenReturn(Optional.of(parentReply));
-			// When + Then
-			assertThrows(ParentReplyDoesNotBelongToTopicException.class,
+			// When
+			ParentReplyDoesNotBelongToTopicException ex = assertThrows(ParentReplyDoesNotBelongToTopicException.class,
 					() -> domainValidationService.findParentReplyInTopic(parentReplyId, paramTopicId));
+			// Then
+			assertEquals(EntityDomain.PARENT_REPLY, ex.getAffectedEntity());
+			assertEquals(EntityDomain.TOPIC, ex.getParentEntity());
 			verify(replyRepository).findById(parentReplyId);
 		}
 
@@ -551,9 +600,13 @@ class DomainValidationServiceUnitTest {
 			// Given
 			Long topicId = 222L;
 			Long parentReplyId = 322L;
-			// When + Then
-			assertThrows(ReplyNotFoundException.class,
+			// When
+			ReplyNotFoundException ex = assertThrows(ReplyNotFoundException.class,
 					() -> domainValidationService.findParentReplyInTopic(parentReplyId, topicId));
+
+			// Then
+			assertEquals(EntityDomain.REPLY, ex.getAffectedEntity());
+			assertEquals(parentReplyId, ex.getMissingValue());
 			verify(replyRepository).findById(parentReplyId);
 		}
 	}

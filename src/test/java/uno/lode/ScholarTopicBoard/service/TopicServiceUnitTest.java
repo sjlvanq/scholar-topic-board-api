@@ -19,6 +19,7 @@ import uno.lode.ScholarTopicBoard.domain.topic.Topic;
 import uno.lode.ScholarTopicBoard.domain.topic.TopicRepository;
 import uno.lode.ScholarTopicBoard.domain.topic.dto.*;
 import uno.lode.ScholarTopicBoard.domain.user.User;
+import uno.lode.ScholarTopicBoard.infra.exception.base.EntityDomain;
 import uno.lode.ScholarTopicBoard.infra.exception.topic.*;
 import uno.lode.ScholarTopicBoard.infra.security.AuthUser;
 
@@ -118,10 +119,14 @@ class TopicServiceUnitTest {
 		    when(validationService.findCourseWithAccess(authUser, courseId)).thenReturn(course);
 		    when(topicRepository.existsByTitleIgnoreCaseAndCourseId(registerDto.title(), courseId)).thenReturn(true);
 
-		    // When + Then
-		    assertThrows(TopicAlreadyExistsException.class,
+		    // When
+		    TopicAlreadyExistsException ex = assertThrows(TopicAlreadyExistsException.class,
 		        () -> topicService.createTopic(authUser, courseId, registerDto));
 
+		    //Then
+		    assertEquals(EntityDomain.TOPIC, ex.getAffectedEntity());
+		    assertEquals("title", ex.getConflictingField());
+		    assertEquals(registerDto.title(), ex.getConflictingValue());
 		    verify(topicRepository).existsByTitleIgnoreCaseAndCourseId(registerDto.title(), courseId);
 		}
 	}
@@ -183,10 +188,14 @@ class TopicServiceUnitTest {
 			doNothing().when(userAuthorizationService).ensureCanAccessAuthorable(authUser, topic);
 			when(topicRepository.existsByTitleIgnoreCaseAndCourseIdAndIdNot(updateDto.title(), courseId, topicId)).thenReturn(true);
 
-			// When + Then
-			assertThrows(TopicAlreadyExistsException.class,
+			// When
+			TopicAlreadyExistsException ex = assertThrows(TopicAlreadyExistsException.class,
 					() -> topicService.updateTopic(authUser, courseId, topicId, updateDto));
-			
+
+			// Then
+			assertEquals(EntityDomain.TOPIC, ex.getAffectedEntity());
+			assertEquals("title", ex.getConflictingField());
+			assertEquals(updateDto.title(), ex.getConflictingValue());
 		}
 	}
 
