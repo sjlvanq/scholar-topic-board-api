@@ -1,7 +1,7 @@
 package uno.lode.ScholarTopicBoard.infra.exception.base;
 
 public enum EntityDomain {
-	USER("User"), COURSE("Course"), TOPIC("Topic"), REPLY("Reply"), ROLE("Role");
+	USER("User"), COURSE("Course"), TOPIC("Topic"), REPLY("Reply"), PARENT_REPLY("Parent reply"), ROLE("Role");
 
 	private final String displayName;
 
